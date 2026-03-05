@@ -967,10 +967,10 @@ function TaskBoardView({ project, onBack, user }) {
     } catch (e) { notify("エラー: " + e.message, false); }
   };
 
-  const del = (id) => askPassword("タスクを削除", async () => {
+  const del = async (id) => {
     try { await deleteTask(id); notify("削除しました", false); }
     catch (e) { notify("エラー: " + e.message, false); }
-  });
+  };
 
   const cycle = async (task) => {
     const order = ["todo", "doing", "done"];
