@@ -330,7 +330,6 @@ function MemberSheet({ projectId, isOwner, onClose }) {
   useEffect(() => { loadMembers(); }, [loadMembers]);
 
   useEffect(() => {
-    if (!isOwner) return;
     fetchAllUsers().then(setAllUsers).catch(() => {});
   }, [isOwner]);
 
@@ -356,8 +355,7 @@ function MemberSheet({ projectId, isOwner, onClose }) {
 
   return (
     <Sheet onClose={onClose} title="メンバー管理">
-      {isOwner && (
-        <div style={{ marginBottom: 20 }}>
+      <div style={{ marginBottom: 20 }}>
           <Field label="メンバーを追加">
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="名前で検索…" style={inputStyle} />
           </Field>
@@ -372,7 +370,6 @@ function MemberSheet({ projectId, isOwner, onClose }) {
           ))}
           {filtered.length === 0 && search.trim() && <div style={{ fontSize: 13, color: "#334155", padding: "12px 0", textAlign: "center" }}>該当なし</div>}
         </div>
-      )}
       <div>
         <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>メンバー一覧</div>
         {members.length === 0 && <div style={{ fontSize: 13, color: "#334155", padding: "20px 0", textAlign: "center" }}>メンバーなし</div>}
