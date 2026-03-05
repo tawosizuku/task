@@ -4,7 +4,12 @@
       "Bash(git:*)",
       "Bash(gh auth:*)",
       "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" auth:*)",
-      "Bash(export:*)"
+      "Bash(export:*)",
+      "Bash(winget install:*)",
+      "Bash(npm install:*)",
+      "Bash(npx vite:*)",
+      "Bash(npx vercel:*)",
+      "Bash(npm run:*)"
     ]
   }
 }
