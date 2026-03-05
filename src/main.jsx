@@ -185,6 +185,13 @@ async function searchUsersByEmail(email) {
   return data;
 }
 
+async function getUsersByIds(userIds) {
+  if (!userIds.length) return [];
+  const { data, error } = await supabase.rpc("get_users_by_ids", { user_ids: userIds });
+  if (error) throw error;
+  return data;
+}
+
 async function fetchMyRole(projectId) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
@@ -298,6 +305,7 @@ function Sheet({ onClose, children, title }) {
 
 function MemberSheet({ projectId, isOwner, onClose }) {
   const [members, setMembers] = useState([]);
+  const [userMap, setUserMap] = useState({});
   const [searchEmail, setSearchEmail] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -307,6 +315,11 @@ function MemberSheet({ projectId, isOwner, onClose }) {
     try {
       const data = await fetchProjectMembers(projectId);
       setMembers(data);
+      const ids = data.map(m => m.user_id);
+      const users = await getUsersByIds(ids);
+      const map = {};
+      for (const u of users) map[u.id] = u;
+      setUserMap(map);
     } catch {}
   }, [projectId]);
 
@@ -369,7 +382,7 @@ function MemberSheet({ projectId, isOwner, onClose }) {
         {members.map(m => (
           <div key={m.user_id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "10px 14px", marginBottom: 6 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 500 }}>{m.user_id.slice(0, 8)}…</div>
+              <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 500 }}>{userMap[m.user_id]?.display_name || "（名前なし）"}</div>
               <span style={{ fontSize: 11, background: m.role === "owner" ? "rgba(251,191,36,0.15)" : "rgba(96,165,250,0.1)", border: `1px solid ${m.role === "owner" ? "rgba(251,191,36,0.3)" : "rgba(96,165,250,0.2)"}`, color: m.role === "owner" ? "#fbbf24" : "#60a5fa", padding: "2px 8px", borderRadius: 100, fontWeight: 600 }}>{m.role}</span>
             </div>
             {isOwner && m.role !== "owner" && (
