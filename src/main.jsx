@@ -497,9 +497,13 @@ function ProjectListView({ onSelect, user, onLogout }) {
   const [pwSheet, setPwSheet] = useState(null);
   const [modal, setModal] = useState(false);
   const [editProj, setEditProj] = useState(null);
-  const [form, setForm] = useState({ name: "", color: PROJECT_COLORS[0], iconFile: null, iconPreview: null });
+  const [form, setForm] = useState({ name: "", color: PROJECT_COLORS[0], iconFile: null, iconPreview: null, members: [] });
   const [memberSheet, setMemberSheet] = useState(null);
+  const [allUsers, setAllUsers] = useState([]);
+  const [memberSearch, setMemberSearch] = useState("");
   const iconInputRef = useRef();
+
+  useEffect(() => { fetchAllUsers().then(setAllUsers).catch(() => {}); }, []);
 
   const notify = (msg, ok = true) => setToast({ msg, ok });
   const askPassword = (title, onConfirm) => setPwSheet({ title, onConfirm });
@@ -533,8 +537,8 @@ function ProjectListView({ onSelect, user, onLogout }) {
     return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
   }, [load]);
 
-  const openAdd = () => { setForm({ name: "", color: PROJECT_COLORS[0], iconFile: null, iconPreview: null }); setEditProj(null); setModal(true); };
-  const openEdit = (p) => { setForm({ name: p.name, color: p.color, iconFile: null, iconPreview: p.icon_url || null }); setEditProj(p); setModal(true); };
+  const openAdd = () => { setForm({ name: "", color: PROJECT_COLORS[0], iconFile: null, iconPreview: null, members: [] }); setMemberSearch(""); setEditProj(null); setModal(true); };
+  const openEdit = (p) => { setForm({ name: p.name, color: p.color, iconFile: null, iconPreview: p.icon_url || null, members: [] }); setEditProj(p); setModal(true); };
 
   const submit = async () => {
     if (!form.name.trim()) return;
@@ -550,6 +554,9 @@ function ProjectListView({ onSelect, user, onLogout }) {
       } else {
         await insertProject({ id: projId, name: form.name, color: form.color, icon_url: iconUrl, createdAt: Date.now(), updatedAt: Date.now() });
         await addProjectMember(projId, user.id, "owner");
+        for (const m of form.members) {
+          try { await addProjectMember(projId, m.id, "member"); } catch {}
+        }
         notify("作成しました");
       }
       setModal(false);
@@ -689,6 +696,35 @@ function ProjectListView({ onSelect, user, onLogout }) {
                 <button onClick={() => setForm(f => ({ ...f, iconFile: null, iconPreview: null }))} style={{ marginTop: 6, background: "none", border: "none", color: "#f87171", fontSize: 12, padding: 0 }}>画像を削除</button>
               )}
             </Field>
+            {!editProj && (
+              <Field label="メンバーを追加">
+                <input value={memberSearch} onChange={e => setMemberSearch(e.target.value)} placeholder="名前で検索…" style={{ ...inputStyle, marginBottom: 8 }} />
+                {form.members.length > 0 && (
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+                    {form.members.map(m => (
+                      <span key={m.id} style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(96,165,250,0.12)", border: "1px solid rgba(96,165,250,0.25)", color: "#60a5fa", padding: "4px 10px", borderRadius: 100, fontSize: 12, fontWeight: 600 }}>
+                        {m.display_name || m.email}
+                        <button onClick={() => setForm(f => ({ ...f, members: f.members.filter(x => x.id !== m.id) }))} style={{ background: "none", border: "none", color: "#60a5fa", fontSize: 14, padding: 0, marginLeft: 2, lineHeight: 1 }}>✕</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div style={{ maxHeight: 150, overflowY: "auto" }}>
+                  {allUsers
+                    .filter(u => u.id !== user.id && !form.members.some(m => m.id === u.id))
+                    .filter(u => !memberSearch.trim() || (u.display_name || "").toLowerCase().includes(memberSearch.toLowerCase()) || (u.email || "").toLowerCase().includes(memberSearch.toLowerCase()))
+                    .map(u => (
+                      <div key={u.id} onClick={() => { setForm(f => ({ ...f, members: [...f.members, u] })); setMemberSearch(""); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 12px", marginBottom: 4, cursor: "pointer" }}>
+                        <div>
+                          <div style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 500 }}>{u.display_name || "（名前なし）"}</div>
+                          <div style={{ fontSize: 11, color: "#475569" }}>{u.email}</div>
+                        </div>
+                        <span style={{ fontSize: 12, color: "#60a5fa" }}>+</span>
+                      </div>
+                    ))}
+                </div>
+              </Field>
+            )}
             <button onClick={submit} disabled={!form.name.trim()} style={{ width: "100%", padding: "16px", borderRadius: 16, fontSize: 16, fontWeight: 700, border: "none", marginTop: 8, marginBottom: 4, background: form.name.trim() ? "linear-gradient(135deg,#60a5fa,#818cf8)" : "#1e293b", color: form.name.trim() ? "#fff" : "#334155" }}>
               {editProj ? "更新する" : "作成する"}
             </button>
