@@ -968,6 +968,7 @@ function TaskBoardView({ project, onBack, user }) {
   };
 
   const del = async (id) => {
+    if (!window.confirm("このタスクを削除しますか？")) return;
     try { await deleteTask(id); notify("削除しました", false); }
     catch (e) { notify("エラー: " + e.message, false); }
   };
