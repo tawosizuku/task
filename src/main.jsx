@@ -818,7 +818,7 @@ function TaskCard({ task, onEdit, onDelete, onCycle, desktop }) {
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span style={{ fontSize: 11, background: pc.bg, border: `1px solid ${pc.border}`, color: pc.color, padding: "2px 8px", borderRadius: 100, fontWeight: 600 }}>{PRIORITIES[task.priority]}</span>
             {task.assignee && <span style={{ fontSize: 11, color: "#475569" }}>@{task.assignee}</span>}
-            <span style={{ fontSize: 10, color: "#1e293b", marginLeft: "auto" }}>{timeAgo(task.updatedAt)}</span>
+            <span style={{ fontSize: 10, color: "#1e293b", marginLeft: "auto" }}>{new Date(task.createdAt).toLocaleDateString("ja")} · {timeAgo(task.updatedAt)}</span>
           </div>
         </div>
         <button onClick={e => { e.stopPropagation(); onDelete(task.id); }} style={{ background: "rgba(248,113,113,0.1)", border: "none", color: "#f87171", width: 28, height: 28, borderRadius: 8, fontSize: 13, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
