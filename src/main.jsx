@@ -192,6 +192,12 @@ async function getUsersByIds(userIds) {
   return data;
 }
 
+async function fetchAllUsers() {
+  const { data, error } = await supabase.rpc("get_all_users");
+  if (error) throw error;
+  return data || [];
+}
+
 async function fetchMyRole(projectId) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
@@ -306,10 +312,8 @@ function Sheet({ onClose, children, title }) {
 function MemberSheet({ projectId, isOwner, onClose }) {
   const [members, setMembers] = useState([]);
   const [userMap, setUserMap] = useState({});
-  const [searchEmail, setSearchEmail] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [searching, setSearching] = useState(false);
-  const debounceRef = useRef(null);
+  const [allUsers, setAllUsers] = useState([]);
+  const [search, setSearch] = useState("");
 
   const loadMembers = useCallback(async () => {
     try {
@@ -326,24 +330,13 @@ function MemberSheet({ projectId, isOwner, onClose }) {
   useEffect(() => { loadMembers(); }, [loadMembers]);
 
   useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!searchEmail.trim()) { setSearchResults([]); return; }
-    debounceRef.current = setTimeout(async () => {
-      setSearching(true);
-      try {
-        const results = await searchUsersByEmail(searchEmail.trim());
-        setSearchResults(results || []);
-      } catch { setSearchResults([]); }
-      setSearching(false);
-    }, 300);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [searchEmail]);
+    if (!isOwner) return;
+    fetchAllUsers().then(setAllUsers).catch(() => {});
+  }, [isOwner]);
 
   const handleAdd = async (user) => {
     try {
       await addProjectMember(projectId, user.id, "member");
-      setSearchEmail("");
-      setSearchResults([]);
       await loadMembers();
     } catch {}
   };
@@ -356,16 +349,19 @@ function MemberSheet({ projectId, isOwner, onClose }) {
   };
 
   const memberIds = new Set(members.map(m => m.user_id));
+  const addable = allUsers.filter(u => !memberIds.has(u.id));
+  const filtered = search.trim()
+    ? addable.filter(u => (u.display_name || "").toLowerCase().includes(search.toLowerCase()) || (u.email || "").toLowerCase().includes(search.toLowerCase()))
+    : addable;
 
   return (
     <Sheet onClose={onClose} title="メンバー管理">
       {isOwner && (
         <div style={{ marginBottom: 20 }}>
-          <Field label="メールで検索して追加">
-            <input value={searchEmail} onChange={e => setSearchEmail(e.target.value)} placeholder="email@example.com" style={inputStyle} />
+          <Field label="メンバーを追加">
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="名前で検索…" style={inputStyle} />
           </Field>
-          {searching && <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>検索中…</div>}
-          {searchResults.filter(u => !memberIds.has(u.id)).map(u => (
+          {filtered.map(u => (
             <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "10px 14px", marginBottom: 6 }}>
               <div>
                 <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 500 }}>{u.display_name || "（名前なし）"}</div>
@@ -374,6 +370,7 @@ function MemberSheet({ projectId, isOwner, onClose }) {
               <button onClick={() => handleAdd(u)} style={{ background: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.3)", color: "#60a5fa", padding: "6px 14px", borderRadius: 10, fontSize: 12, fontWeight: 600 }}>追加</button>
             </div>
           ))}
+          {filtered.length === 0 && search.trim() && <div style={{ fontSize: 13, color: "#334155", padding: "12px 0", textAlign: "center" }}>該当なし</div>}
         </div>
       )}
       <div>
