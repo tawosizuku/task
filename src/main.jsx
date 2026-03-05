@@ -829,7 +829,7 @@ function TaskCard({ task, onEdit, onDelete, onCycle, desktop }) {
 
 // ── DBビュー ───────────────────────────────────────
 
-function DBView({ tasks, onClear, onBack }) {
+function DBView({ tasks, onBack }) {
   const [q, setQ] = useState("");
   const filt = tasks.filter(t => Object.values(t).join(" ").toLowerCase().includes(q.toLowerCase()));
   return (
@@ -848,9 +848,6 @@ function DBView({ tasks, onClear, onBack }) {
             <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{l}</div>
           </div>
         ))}
-      </div>
-      <div style={{ padding: "0 16px 12px" }}>
-        <button onClick={onClear} style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.25)", color: "#f87171", padding: "10px 20px", borderRadius: 12, fontSize: 13, fontWeight: 600 }}>⊘ 全タスクを削除</button>
       </div>
       <div style={{ padding: "0 16px 10px" }}>
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="検索…" style={{ ...inputStyle, fontSize: 14 }} />
@@ -980,10 +977,6 @@ function TaskBoardView({ project, onBack, user }) {
     catch (e) { notify("エラー: " + e.message, false); }
   };
 
-  const doClear = () => askPassword("全タスクを削除", async () => {
-    try { await deleteAllTasks(project.id); notify("全削除しました", false); }
-    catch (e) { notify("エラー: " + e.message, false); }
-  });
 
   const FILTERS = [["all", "すべて"], ["todo", "未着手"], ["doing", "進行中"], ["done", "完了"]];
   const shown = tasks.filter(t => filter === "all" || t.status === filter);
@@ -992,7 +985,7 @@ function TaskBoardView({ project, onBack, user }) {
   if (dbView) return (
     <div style={{ maxWidth: desktop ? 900 : 540, margin: "0 auto", height: "100dvh", display: "flex", flexDirection: "column", background: "#060a14", fontFamily: "'Inter',sans-serif", color: "#e2e8f0" }}>
       <GlobalStyle />
-      <DBView tasks={tasks} onClear={doClear} onBack={() => setDbView(false)} />
+      <DBView tasks={tasks} onBack={() => setDbView(false)} />
       {toast   && <Toast {...toast} onDone={() => setToast(null)} />}
       {pwSheet && <PasswordSheet title={pwSheet.title} onConfirm={pwSheet.onConfirm} onClose={() => setPwSheet(null)} />}
     </div>
