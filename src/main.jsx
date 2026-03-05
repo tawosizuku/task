@@ -413,10 +413,12 @@ function AuthView() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
     setError("");
+    setSuccess("");
     if (!email.trim() || !password.trim()) return setError("メールとパスワードを入力してください");
     if (mode === "signup" && !name.trim()) return setError("名前を入力してください");
     setLoading(true);
@@ -427,6 +429,10 @@ function AuthView() {
           options: { data: { display_name: name.trim() } },
         });
         if (error) throw error;
+        setSuccess("アカウントを作成しました");
+        setMode("login");
+        setName("");
+        setPassword("");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -472,6 +478,7 @@ function AuthView() {
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" style={inputStyle} onKeyDown={e => e.key === "Enter" && submit()} />
           </Field>
           {error && <div style={{ color: "#f87171", fontSize: 13 }}>{error}</div>}
+          {success && <div style={{ color: "#34d399", fontSize: 13 }}>{success}</div>}
           <button onClick={submit} disabled={loading} style={{ width: "100%", padding: "15px", borderRadius: 14, fontSize: 15, fontWeight: 700, border: "none", background: "linear-gradient(135deg,#60a5fa,#818cf8)", color: "#fff", marginTop: 8 }}>
             {loading ? "…" : mode === "login" ? "ログイン" : "アカウント作成"}
           </button>
